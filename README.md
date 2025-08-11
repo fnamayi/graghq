@@ -154,11 +154,21 @@ The application demonstrates all required query types:
 1. **XP Progress Over Time**: Line chart showing cumulative XP growth
 2. **Audit Ratio Visualization**: Bar chart comparing audit given vs received
 
-### Bonus Charts
-3. **Project Pass/Fail Ratio**: Pie chart showing success rate
-4. **Skills Analysis**: Bar chart of top skills and achievements
+### Project Requirement Charts
+3. **XP Earned by Project**: Bar chart showing XP distribution across projects
+4. **Piscine (JS/Go) Statistics**: Grouped bar chart showing pass/fail rates for JavaScript and Go piscines
 
-All charts are created using pure SVG without external dependencies.
+### Bonus Charts
+5. **Project Pass/Fail Ratio**: Pie chart showing overall success rate
+6. **Skills Analysis**: Bar chart of top skills and achievements
+
+**Total: 6 different chart types implemented!**
+
+All charts are created using pure SVG without external dependencies, featuring:
+- Interactive tooltips with detailed information
+- Responsive design that adapts to container size
+- Color-coded data for easy interpretation
+- Professional styling with proper legends and labels
 
 ## 🔐 Authentication
 

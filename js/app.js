@@ -249,7 +249,53 @@ if (typeof window !== 'undefined') {
         getUserData: () => api.getCachedUserData(),
         
         // Test GraphQL connection
-        testConnection: () => api.testConnection()
+        testConnection: () => api.testConnection(),
+
+        // Debug display issues
+        debugDisplay: () => {
+            console.log('🔍 Debugging display issues...');
+
+            // Check if app container exists
+            const app = document.getElementById('app');
+            console.log('App container:', app ? '✅ Found' : '❌ Missing');
+
+            // Check for chart containers
+            const chartIds = [
+                'xp-progress-chart',
+                'audit-chart',
+                'project-ratio-chart',
+                'xp-by-project-chart',
+                'piscine-stats-chart',
+                'skills-chart'
+            ];
+
+            console.log('Chart containers:');
+            chartIds.forEach(id => {
+                const element = document.getElementById(id);
+                console.log(`  ${id}: ${element ? '✅ Found' : '❌ Missing'}`);
+                if (element) {
+                    console.log(`    Content: ${element.innerHTML.substring(0, 100)}...`);
+                }
+            });
+
+            // Check authentication
+            console.log('Authentication:', auth.isAuthenticated() ? '✅ Valid' : '❌ Invalid');
+
+            // Check user data
+            const userData = api.getCachedUserData();
+            console.log('User data:', userData ? '✅ Available' : '❌ Missing');
+            if (userData) {
+                console.log('  Transactions:', userData.transactions?.length || 0);
+                console.log('  Progress:', userData.progress?.length || 0);
+            }
+
+            return {
+                app: !!app,
+                charts: chartIds.map(id => ({ id, exists: !!document.getElementById(id) })),
+                auth: auth.isAuthenticated(),
+                userData: !!userData
+            };
+        }
     };
     
     console.log('🛠️ Development helpers available: window.devHelpers');

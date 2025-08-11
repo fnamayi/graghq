@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zone01 GraphQL Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2d2d30;
+            padding: 15px 20px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #569cd6;
+            font-size: 1.5rem;
+        }
+
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+
+        .status-indicator.authenticated {
+            background: #4caf50;
+        }
+
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr auto;
+            gap: 1px;
+            background: #3e3e42;
+        }
+
+        .query-panel, .result-panel {
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #2d2d30;
+            padding: 10px 15px;
+            border-bottom: 1px solid #3e3e42;
+            font-weight: bold;
+            color: #cccccc;
+        }
+
+        .query-editor, .result-viewer {
+            flex: 1;
+            padding: 15px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            color: #d4d4d4;
+        }
+
+        .query-editor {
+            background: #1e1e1e;
+        }
+
+        .result-viewer {
+            background: #252526;
+            color: #cccccc;
+        }
+
+        .controls {
+            grid-column: 1 / -1;
+            background: #2d2d30;
+            padding: 15px 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            border-top: 1px solid #3e3e42;
+        }
+
+        .btn {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #1177bb;
+        }
+
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .btn.secondary {
+            background: #5a5a5a;
+        }
+
+        .btn.secondary:hover {
+            background: #6a6a6a;
+        }
+
+        .examples {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .examples select {
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #5a5a5a;
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #4caf50;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .loading {
+            color: #ff9800;
+            font-style: italic;
+        }
+
+        .token-input {
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #5a5a5a;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 300px;
+        }
+
+        .docs-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: #252526;
+            border-left: 1px solid #3e3e42;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .docs-panel.open {
+            right: 0;
+        }
+
+        .docs-header {
+            background: #2d2d30;
+            padding: 15px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .docs-content {
+            padding: 15px;
+        }
+
+        .close-docs {
+            background: none;
+            border: none;
+            color: #cccccc;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Zone01 GraphQL Explorer</h1>
+        <div class="auth-status">
+            <div class="status-indicator" id="auth-indicator"></div>
+            <span id="auth-text">Not Authenticated</span>
+            <input type="password" class="token-input" id="token-input" placeholder="Enter JWT token...">
+            <button class="btn secondary" onclick="setToken()">Set Token</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="query-panel">
+            <div class="panel-header">Query Editor</div>
+            <textarea class="query-editor" id="query-editor" placeholder="Enter your GraphQL query here...">
+{
+  user {
+    id
+    login
+    firstName
+    lastName
+  }
+}</textarea>
+        </div>
+
+        <div class="result-panel">
+            <div class="panel-header">Results</div>
+            <textarea class="result-viewer" id="result-viewer" readonly placeholder="Query results will appear here..."></textarea>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="executeQuery()" id="execute-btn">Execute Query</button>
+            <button class="btn secondary" onclick="clearEditor()">Clear</button>
+            <button class="btn secondary" onclick="formatQuery()">Format</button>
+            <button class="btn secondary" onclick="toggleDocs()">Docs</button>
+            
+            <div class="examples">
+                <label>Examples:</label>
+                <select id="example-select" onchange="loadExample()">
+                    <option value="">Select an example...</option>
+                    <option value="user">Basic User Info</option>
+                    <option value="transactions">User Transactions</option>
+                    <option value="progress">User Progress</option>
+                    <option value="audit">Audit Data</option>
+                    <option value="nested">Nested Query</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-panel" id="docs-panel">
+        <div class="docs-header">
+            <h3>GraphQL Schema Documentation</h3>
+            <button class="close-docs" onclick="toggleDocs()">×</button>
+        </div>
+        <div class="docs-content" id="docs-content">
+            <p>Loading schema documentation...</p>
+        </div>
+    </div>
+
+    <script>
+        const GRAPHQL_ENDPOINT = "https://learn.zone01kisumu.ke/api/graphql-engine/v1/graphql";
+        let currentToken = localStorage.getItem('zone01_token') || localStorage.getItem('token') || localStorage.getItem('jwt');
+
+        // Example queries
+        const examples = {
+            user: `{
+  user {
+    id
+    login
+    firstName
+    lastName
+    email
+    createdAt
+  }
+}`,
+            transactions: `{
+  transaction(
+    where: {
+      type: {_eq: "xp"}
+    },
+    limit: 10,
+    order_by: {createdAt: desc}
+  ) {
+    id
+    type
+    amount
+    createdAt
+    path
+  }
+}`,
+            progress: `{
+  progress(
+    limit: 10,
+    order_by: {createdAt: desc}
+  ) {
+    id
+    grade
+    createdAt
+    path
+    object {
+      name
+      type
+    }
+  }
+}`,
+            audit: `{
+  transaction_aggregate(
+    where: {
+      type: {_in: ["up", "down"]}
+    }
+  ) {
+    aggregate {
+      sum {
+        amount
+      }
+      count
+    }
+  }
+}`,
+            nested: `{
+  user {
+    id
+    login
+    transactions(
+      where: {type: {_eq: "xp"}},
+      limit: 5,
+      order_by: {createdAt: desc}
+    ) {
+      amount
+      createdAt
+      path
+    }
+    progresses(
+      limit: 5,
+      order_by: {createdAt: desc}
+    ) {
+      grade
+      createdAt
+      object {
+        name
+        type
+      }
+    }
+  }
+}`
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAuthStatus();
+            loadSchemaDocs();
+        });
+
+        function updateAuthStatus() {
+            const indicator = document.getElementById('auth-indicator');
+            const text = document.getElementById('auth-text');
+            const tokenInput = document.getElementById('token-input');
+
+            if (currentToken) {
+                indicator.classList.add('authenticated');
+                text.textContent = 'Authenticated';
+                tokenInput.value = currentToken.substring(0, 20) + '...';
+            } else {
+                indicator.classList.remove('authenticated');
+                text.textContent = 'Not Authenticated';
+                tokenInput.value = '';
+            }
+        }
+
+        function setToken() {
+            const tokenInput = document.getElementById('token-input');
+            const token = tokenInput.value.trim();
+            
+            if (token) {
+                currentToken = token;
+                localStorage.setItem('zone01_token', token);
+                updateAuthStatus();
+                showMessage('Token set successfully', 'success');
+            } else {
+                currentToken = null;
+                localStorage.removeItem('zone01_token');
+                updateAuthStatus();
+                showMessage('Token cleared', 'success');
+            }
+        }
+
+        async function executeQuery() {
+            const queryEditor = document.getElementById('query-editor');
+            const resultViewer = document.getElementById('result-viewer');
+            const executeBtn = document.getElementById('execute-btn');
+
+            const query = queryEditor.value.trim();
+            if (!query) {
+                showMessage('Please enter a query', 'error');
+                return;
+            }
+
+            if (!currentToken) {
+                showMessage('Please set a JWT token first', 'error');
+                return;
+            }
+
+            executeBtn.disabled = true;
+            executeBtn.textContent = 'Executing...';
+            resultViewer.value = 'Executing query...';
+
+            try {
+                const response = await fetch(GRAPHQL_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                resultViewer.value = JSON.stringify(data, null, 2);
+
+                if (data.errors) {
+                    showMessage('Query executed with errors', 'error');
+                } else {
+                    showMessage('Query executed successfully', 'success');
+                }
+
+            } catch (error) {
+                resultViewer.value = JSON.stringify({ error: error.message }, null, 2);
+                showMessage('Network error: ' + error.message, 'error');
+            } finally {
+                executeBtn.disabled = false;
+                executeBtn.textContent = 'Execute Query';
+            }
+        }
+
+        function clearEditor() {
+            document.getElementById('query-editor').value = '';
+            document.getElementById('result-viewer').value = '';
+        }
+
+        function formatQuery() {
+            const queryEditor = document.getElementById('query-editor');
+            try {
+                // Simple formatting - add proper indentation
+                const query = queryEditor.value;
+                const formatted = query
+                    .replace(/\{/g, '{\n  ')
+                    .replace(/\}/g, '\n}')
+                    .replace(/,/g, ',\n  ')
+                    .replace(/\n\s*\n/g, '\n');
+                queryEditor.value = formatted;
+                showMessage('Query formatted', 'success');
+            } catch (error) {
+                showMessage('Error formatting query', 'error');
+            }
+        }
+
+        function loadExample() {
+            const select = document.getElementById('example-select');
+            const queryEditor = document.getElementById('query-editor');
+            
+            if (select.value && examples[select.value]) {
+                queryEditor.value = examples[select.value];
+                select.value = '';
+            }
+        }
+
+        function toggleDocs() {
+            const docsPanel = document.getElementById('docs-panel');
+            docsPanel.classList.toggle('open');
+        }
+
+        async function loadSchemaDocs() {
+            const docsContent = document.getElementById('docs-content');
+            
+            if (!currentToken) {
+                docsContent.innerHTML = '<p>Please authenticate to view schema documentation.</p>';
+                return;
+            }
+
+            try {
+                const introspectionQuery = `
+                    query IntrospectionQuery {
+                        __schema {
+                            queryType { name }
+                            mutationType { name }
+                            subscriptionType { name }
+                            types {
+                                ...FullType
+                            }
+                        }
+                    }
+
+                    fragment FullType on __Type {
+                        kind
+                        name
+                        description
+                        fields(includeDeprecated: true) {
+                            name
+                            description
+                            type {
+                                ...TypeRef
+                            }
+                        }
+                    }
+
+                    fragment TypeRef on __Type {
+                        kind
+                        name
+                        ofType {
+                            kind
+                            name
+                        }
+                    }
+                `;
+
+                const response = await fetch(GRAPHQL_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ query: introspectionQuery })
+                });
+
+                const data = await response.json();
+                
+                if (data.data && data.data.__schema) {
+                    const schema = data.data.__schema;
+                    let docsHtml = '<h4>Available Types:</h4><ul>';
+                    
+                    schema.types
+                        .filter(type => !type.name.startsWith('__'))
+                        .slice(0, 20) // Limit for display
+                        .forEach(type => {
+                            docsHtml += `<li><strong>${type.name}</strong> (${type.kind})</li>`;
+                        });
+                    
+                    docsHtml += '</ul>';
+                    docsContent.innerHTML = docsHtml;
+                } else {
+                    docsContent.innerHTML = '<p>Could not load schema documentation.</p>';
+                }
+
+            } catch (error) {
+                docsContent.innerHTML = `<p>Error loading documentation: ${error.message}</p>`;
+            }
+        }
+
+        function showMessage(message, type) {
+            // Simple message display - could be enhanced with a proper notification system
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        // Auto-load token from main app if available
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'zone01_token' || e.key === 'token' || e.key === 'jwt') {
+                currentToken = e.newValue;
+                updateAuthStatus();
+                loadSchemaDocs();
+            }
+        });
+    </script>
+</body>
+</html>

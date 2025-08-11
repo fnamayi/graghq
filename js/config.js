@@ -14,14 +14,19 @@ const CONFIG = {
     
     // Chart Settings
     CHART_COLORS: {
-        primary: "#2196F3",
-        secondary: "#ff9800",
-        success: "#4caf50",
-        danger: "#f44336",
-        warning: "#ff9800",
-        info: "#17a2b8",
-        light: "#f8f9fa",
-        dark: "#343a40"
+        primary: "#00ff88",
+        secondary: "#0088ff",
+        success: "#00ff88",
+        danger: "#ff6b6b",
+        warning: "#ffb347",
+        info: "#0088ff",
+        light: "#3a3a3a",
+        dark: "#1a1a1a",
+        background: "#000000",
+        border: "#333333",
+        text: "#ffffff",
+        textSecondary: "#b0b0b0",
+        greyBlue: "#4a5568"
     },
     
     // XP Level Calculation

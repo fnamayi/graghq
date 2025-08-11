@@ -6,25 +6,31 @@
     <title>Zone01 Profile - Test Suite</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background: #f5f5f5;
+            background: #000000;
+            color: #ffffff;
+            line-height: 1.6;
         }
         
         .test-section {
-            background: white;
+            background: #1a1a1a;
+            border: 1px solid #333333;
             margin: 20px 0;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
-        
+
         .test-section h2 {
-            color: #2196F3;
-            border-bottom: 2px solid #2196F3;
-            padding-bottom: 10px;
+            color: #00ff88;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
         .test-item {
@@ -55,27 +61,43 @@
         }
         
         .btn {
-            background: #2196F3;
-            color: white;
+            background: #00ff88;
+            color: #000000;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 5px;
+            margin: 8px;
             text-decoration: none;
             display: inline-block;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
         }
-        
+
         .btn:hover {
-            background: #1976D2;
+            background: #00cc6a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
-        
+
         .btn.secondary {
-            background: #666;
+            background: #4a5568;
+            color: #ffffff;
         }
-        
+
+        .btn.secondary:hover {
+            background: #2d3748;
+        }
+
         .btn.danger {
-            background: #f44336;
+            background: #ff6b6b;
+            color: #ffffff;
+        }
+
+        .btn.danger:hover {
+            background: #ff5252;
         }
         
         .status {
@@ -153,6 +175,7 @@
         <a href="graphiql.html" class="btn secondary">Open GraphiQL Explorer</a>
         <button class="btn" onclick="runAllTests()">Run All Tests</button>
         <button class="btn danger" onclick="testInvalidCredentials()">Test Invalid Login</button>
+        <button class="btn secondary" onclick="showJWTToken()">View JWT Token</button>
     </div>
 
     <div class="test-section">
@@ -259,13 +282,16 @@
         
         <div class="test-item pending">
             <h4>5. Test Charts</h4>
-            <p>Verify that at least 2 different SVG charts are displayed:</p>
+            <p>Verify that multiple different SVG charts are displayed:</p>
             <ul>
-                <li>XP Progress Over Time (line chart)</li>
-                <li>Audit Ratio Visualization (bar chart)</li>
-                <li>Project Pass/Fail Ratio (pie chart)</li>
-                <li>Skills Chart (bar chart - bonus)</li>
+                <li>✅ XP Progress Over Time (line chart)</li>
+                <li>✅ Audit Ratio Visualization (bar chart)</li>
+                <li>✅ Project Pass/Fail Ratio (pie chart)</li>
+                <li>✅ XP Earned by Project (bar chart)</li>
+                <li>✅ Piscine (JS/Go) Statistics (grouped bar chart)</li>
+                <li>✅ Skills Chart (bar chart - bonus)</li>
             </ul>
+            <p><strong>Total: 6 different chart types implemented!</strong></p>
         </div>
         
         <div class="test-item pending">
@@ -349,7 +375,31 @@
     </div>
 
     <div class="test-section">
-        <h2>🚀 Hosting Instructions</h2>
+        <h2>� JWT Token Viewer</h2>
+        <div id="jwt-section">
+            <p>View and inspect your current JWT token:</p>
+            <div id="jwt-display" style="margin: 20px 0;">
+                <div style="background: #2a2a2a; border: 1px solid #333; padding: 16px; border-radius: 8px; margin: 12px 0;">
+                    <strong>Token Status:</strong> <span id="token-status">Checking...</span>
+                </div>
+                <div style="background: #2a2a2a; border: 1px solid #333; padding: 16px; border-radius: 8px; margin: 12px 0;">
+                    <strong>Token Preview:</strong><br>
+                    <code id="token-preview" style="word-break: break-all; font-size: 12px; color: #00ff88;">Loading...</code>
+                </div>
+                <div style="background: #2a2a2a; border: 1px solid #333; padding: 16px; border-radius: 8px; margin: 12px 0;">
+                    <strong>User Info:</strong>
+                    <div id="user-info">Loading...</div>
+                </div>
+            </div>
+            <div style="margin: 16px 0;">
+                <button class="btn" onclick="copyToken()">Copy Full Token</button>
+                <button class="btn secondary" onclick="refreshTokenInfo()">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>�🚀 Hosting Instructions</h2>
         <p>To test hosting with Python HTTP server:</p>
         <div class="code">
 # Navigate to project directory
@@ -361,7 +411,7 @@ python3 -m http.server 8000
 # Open in browser
 http://localhost:8000
         </div>
-        
+
         <p>The application should work without any external dependencies or build steps.</p>
     </div>
 
@@ -375,6 +425,98 @@ http://localhost:8000
             // Open main app with test parameters
             window.open('index.html?test=invalid', '_blank');
         }
+
+        function showJWTToken() {
+            refreshTokenInfo();
+            document.getElementById('jwt-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function parseJwt(token) {
+            try {
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (error) {
+                console.error("Error parsing JWT:", error);
+                return null;
+            }
+        }
+
+        function refreshTokenInfo() {
+            const token = localStorage.getItem('zone01_token') || localStorage.getItem('token') || localStorage.getItem('jwt');
+            const statusEl = document.getElementById('token-status');
+            const previewEl = document.getElementById('token-preview');
+            const userInfoEl = document.getElementById('user-info');
+
+            if (!token) {
+                statusEl.innerHTML = '<span style="color: #ff6b6b;">❌ No token found</span>';
+                previewEl.textContent = 'No JWT token available. Please login first.';
+                userInfoEl.innerHTML = '<span style="color: #ff6b6b;">No user information available</span>';
+                return;
+            }
+
+            try {
+                const payload = parseJwt(token);
+                const isExpired = payload.exp && payload.exp < Date.now() / 1000;
+
+                // Status
+                if (isExpired) {
+                    statusEl.innerHTML = '<span style="color: #ff6b6b;">❌ Token expired</span>';
+                } else {
+                    statusEl.innerHTML = '<span style="color: #00ff88;">✅ Token valid</span>';
+                }
+
+                // Preview
+                const preview = token.length > 100
+                    ? token.substring(0, 50) + '...' + token.substring(token.length - 50)
+                    : token;
+                previewEl.textContent = preview;
+
+                // User info
+                if (payload) {
+                    userInfoEl.innerHTML = `
+                        <div style="margin: 8px 0;"><strong>User ID:</strong> ${payload.sub || 'N/A'}</div>
+                        <div style="margin: 8px 0;"><strong>Username:</strong> ${payload.username || payload.login || 'N/A'}</div>
+                        <div style="margin: 8px 0;"><strong>Issued:</strong> ${payload.iat ? new Date(payload.iat * 1000).toLocaleString() : 'N/A'}</div>
+                        <div style="margin: 8px 0;"><strong>Expires:</strong> ${payload.exp ? new Date(payload.exp * 1000).toLocaleString() : 'N/A'}</div>
+                        <div style="margin: 8px 0;"><strong>Algorithm:</strong> ${payload.alg || 'N/A'}</div>
+                    `;
+                } else {
+                    userInfoEl.innerHTML = '<span style="color: #ff6b6b;">Error parsing token payload</span>';
+                }
+
+            } catch (error) {
+                statusEl.innerHTML = '<span style="color: #ff6b6b;">❌ Invalid token format</span>';
+                previewEl.textContent = 'Error: ' + error.message;
+                userInfoEl.innerHTML = '<span style="color: #ff6b6b;">Error parsing token</span>';
+            }
+        }
+
+        async function copyToken() {
+            const token = localStorage.getItem('zone01_token') || localStorage.getItem('token') || localStorage.getItem('jwt');
+
+            if (!token) {
+                alert('No JWT token available to copy');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(token);
+                alert('JWT token copied to clipboard!');
+            } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = token;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('JWT token copied to clipboard!');
+            }
+        }
         
         // Mark requirements as checked based on implementation
         document.addEventListener('DOMContentLoaded', () => {
@@ -387,13 +529,16 @@ http://localhost:8000
                 'req-http-server', 'req-file-structure', 'req-no-external-deps',
                 'bonus-additional-info', 'bonus-extra-charts', 'bonus-custom-graphiql', 'bonus-skills-section'
             ];
-            
+
             implementedFeatures.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
                     element.classList.add('checked');
                 }
             });
+
+            // Initialize JWT token display
+            refreshTokenInfo();
         });
     </script>
 </body>

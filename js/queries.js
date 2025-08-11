@@ -198,14 +198,15 @@ class Queries {
     }
 
     /**
-     * Bonus Query: Get user skills data
+     * Bonus Query: Get user skills data (multiple approaches)
      * @param {number} userId - User ID
      * @returns {object} - GraphQL query object
      */
     static getUserSkills(userId) {
         return {
             query: `{
-                transaction(
+                # Try to get skill transactions
+                skillTransactions: transaction(
                     where: {
                         type: {_eq: "skill"},
                         userId: {_eq: ${userId}}
@@ -218,6 +219,25 @@ class Queries {
                     createdAt
                     path
                     objectId
+                    object {
+                        name
+                        type
+                        attrs
+                    }
+                }
+
+                # Get project-based skills from progress
+                projectSkills: progress(
+                    where: {
+                        userId: {_eq: ${userId}},
+                        grade: {_gte: 1}
+                    },
+                    order_by: {createdAt: desc}
+                ) {
+                    id
+                    grade
+                    createdAt
+                    path
                     object {
                         name
                         type
